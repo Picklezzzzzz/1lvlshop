@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>1lvlshop — админка</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf6f4;--text:#3a2a28;--muted:#8f7870;--line:#eadfd8;--accent:#d47884;--accent-2:#a34856;--danger:#c45a5a;--font:Outfit,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:32px 16px;background-image:radial-gradient(ellipse 70% 40% at 0% 0%,rgba(196,93,106,.14),transparent 55%),linear-gradient(180deg,#f8f1ee,#faf6f4)}
+.wrap{max-width:720px;margin:0 auto}
+h1{font-size:1.5rem;font-weight:800;margin-bottom:8px;letter-spacing:-.03em}
+.lead{color:var(--muted);margin-bottom:24px;line-height:1.5}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 6px 24px rgba(58,42,40,.06);margin-bottom:16px}
+.card h2{font-size:1.05rem;font-weight:750;margin-bottom:6px;letter-spacing:-.02em}
+.card .hint{color:var(--muted);font-size:.9rem;line-height:1.45;margin-bottom:14px}
+label{display:block;font-size:.86rem;font-weight:600;color:var(--muted);margin-bottom:6px}
+input[type=password],input[type=file]{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);font:inherit;margin-bottom:14px;background:#fff}
+input:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 4px rgba(196,93,106,.16)}
+.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:14px;border:0;border-radius:14px;font:inherit;font-weight:800;color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-2));cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn-sm{width:auto;padding:8px 12px;border-radius:10px;font-size:.82rem;font-weight:700}
+.btn-ghost{background:#fff;color:var(--accent-2);border:1.5px solid #e8cfd3}
+.btn-danger{background:#fff;color:var(--danger);border:1.5px solid #f0d0d0}
+.msg{margin-top:12px;font-weight:600;min-height:1.3em}
+.msg.ok{color:var(--accent-2)}.msg.err{color:var(--danger)}
+ul{margin:10px 0 0 18px;color:var(--muted);font-size:.92rem;line-height:1.55}
+code{background:#f2e9e4;padding:1px 6px;border-radius:6px;font-size:.85em}
+a{color:var(--accent-2);font-weight:700}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;margin-top:14px}
+.photo-card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#faf6f4;display:flex;flex-direction:column}
+.photo-card img{width:100%;aspect-ratio:1;object-fit:cover;background:#f2e9e4;display:block}
+.photo-card .meta{padding:10px;display:flex;flex-direction:column;gap:8px}
+.photo-card .name{font-size:.75rem;font-weight:650;word-break:break-all;line-height:1.3;color:var(--text)}
+.photo-card .path{font-size:.72rem;color:var(--muted);word-break:break-all}
+.photo-empty{padding:18px;text-align:center;color:var(--muted);font-weight:550;font-size:.9rem;border:1px dashed var(--line);border-radius:14px;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Админка витрины</h1>
+  <p class="lead">Прайса и фото для демо-кондитерской. Сайт: <a href="/">на витрину</a></p>
+
+  <div class="card">
+    <label for="pass">Пароль админки</label>
+    <input type="password" id="pass" autocomplete="current-password" placeholder="из .env → ADMIN_PASSWORD">
+  </div>
+
+  <div class="card">
+    <h2>1. Прайс Excel / CSV</h2>
+    <p class="hint">Заменяет весь каталог на сайте.</p>
+    <label for="file">Файл (.xlsx, .xls или .csv)</label>
+    <input type="file" id="file" accept=".csv,.xlsx,.xls,text/csv">
+    <button class="btn" id="btn" type="button">Загрузить и обновить каталог</button>
+    <div class="msg" id="msg" role="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Фото товаров</h2>
+    <p class="hint">Загрузите картинки сюда, нажмите «Копировать путь» и вставьте в колонку <code>фото</code> в Excel. Можно писать просто имя файла, например <code>ekler.jpg</code>.</p>
+    <label for="photos">Картинки (jpg, png, webp)</label>
+    <input type="file" id="photos" accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif" multiple>
+    <div class="btn-row">
+      <button class="btn" id="photoBtn" type="button" style="flex:1">Загрузить фото</button>
+      <button class="btn btn-sm btn-ghost" id="photoRefresh" type="button">Обновить список</button>
+    </div>
+    <div class="msg" id="photoMsg" role="status"></div>
+    <div id="photoList"></div>
+  </div>
+
+  <div class="card">
+    <strong>Колонки в Excel / CSV</strong>
+    <ul>
+      <li><code>название</code> — обязательно</li>
+      <li><code>цена</code> — обязательно, число &gt; 0</li>
+      <li><code>остаток</code> — сколько в наличии (0 можно скрыть на витрине)</li>
+      <li><code>категория</code> — <code>торты</code> / <code>выпечка</code> / <code>шоколад</code> / <code>конфеты</code> / <code>наборы</code></li>
+      <li><code>фасовка</code> — например <code>1 кг</code>, <code>1 шт</code>, <code>200 г</code></li>
+      <li><code>фото</code> — имя файла после загрузки выше, напр. <code>ekler.jpg</code></li>
+      <li><code>описание</code> — текст в кнопке «i» на карточке</li>
+      <li><code>состав</code> — по желанию</li>
+      <li><code>аллергены</code> — по желанию</li>
+    </ul>
+    <p style="margin-top:12px;color:var(--muted);font-size:.9rem">Готовый пример: <a href="/data/sample.csv?v=2">sample.csv</a> (откройте или скачайте). Старые английские заголовки (<code>name</code>, <code>price</code>, <code>cat</code>…) тоже работают.</p>
+  </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const pass = () => $('#pass').value;
+const msg = (id, t, ok) => { const el = $(id); el.textContent = t; el.className = 'msg ' + (ok ? 'ok' : 'err'); };
+
+function authHeaders(extra = {}) {
+  return { 'X-Admin-Password': pass(), ...extra };
+}
+
+function renderPhotos(list) {
+  const box = $('#photoList');
+  if (!list || !list.length) {
+    box.innerHTML = '<div class="photo-empty">Пока нет загруженных фото</div>';
+    return;
+  }
+  box.innerHTML = `<div class="photo-grid">${list.map((p) => {
+    const pathText = '/photos/' + p.name;
+    return `<article class="photo-card">
+      <img src="${p.url}" alt="" loading="lazy">
+      <div class="meta">
+        <div class="name">${p.name}</div>
+        <div class="path">${pathText}</div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-sm btn-ghost" data-copy="${pathText}">Копировать путь</button>
+          <button type="button" class="btn btn-sm btn-danger" data-del="${encodeURIComponent(p.name)}">Удалить</button>
+        </div>
+      </div>
+    </article>`;
+  }).join('')}</div>`;
+}
+
+async function loadPhotoList() {
+  if (!pass()) {
+    $('#photoList').innerHTML = '<div class="photo-empty">Введите пароль, чтобы увидеть фото</div>';
+    return;
+  }
+  try {
+    const res = await fetch('/api/photos', { headers: authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка');
+    renderPhotos(data.photos || []);
+  } catch (e) {
+    msg('#photoMsg', e.message || 'Не удалось загрузить список', false);
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result || ''));
+    r.onerror = () => reject(new Error('Не удалось прочитать ' + file.name));
+    r.readAsDataURL(file);
+  });
+}
+
+$('#btn').addEventListener('click', async () => {
+  const file = $('#file').files[0];
+  if (!pass()) return msg('#msg', 'Введите пароль', false);
+  if (!file) return msg('#msg', 'Выберите файл', false);
+
+  $('#btn').disabled = true;
+  msg('#msg', 'Читаю файл…', true);
+  try {
+    const buf = await file.arrayBuffer();
+    let rows;
+    if (/\.csv$/i.test(file.name)) {
+      const text = new TextDecoder('utf-8').decode(buf);
+      const wb = XLSX.read(text, { type: 'string', FS: ';' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (!rows.length) {
+        const wb2 = XLSX.read(text, { type: 'string' });
+        rows = XLSX.utils.sheet_to_json(wb2.Sheets[wb2.SheetNames[0]], { defval: '' });
+      }
+    } else {
+      const wb = XLSX.read(buf, { type: 'array' });
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    }
+    if (!rows.length) throw new Error('Пустой лист');
+
+    msg('#msg', 'Отправляю на сервер…', true);
+    const res = await fetch('/api/catalog', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ rows })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка ' + res.status);
+    msg('#msg', 'Готово: ' + data.count + ' товаров · ' + new Date(data.updatedAt).toLocaleString('ru-RU'), true);
+  } catch (e) {
+    msg('#msg', e.message || 'Ошибка', false);
+  } finally {
+    $('#btn').disabled = false;
+  }
+});
+
+$('#photoBtn').addEventListener('click', async () => {
+  const files = [...($('#photos').files || [])];
+  if (!pass()) return msg('#photoMsg', 'Введите пароль', false);
+  if (!files.length) return msg('#photoMsg', 'Выберите картинки', false);
+
+  $('#photoBtn').disabled = true;
+  msg('#photoMsg', 'Загружаю…', true);
+  try {
+    const payload = [];
+    for (const f of files) {
+      if (f.size > 6 * 1024 * 1024) throw new Error('Слишком большой файл: ' + f.name + ' (макс. 6 МБ)');
+      payload.push({ name: f.name, data: await fileToBase64(f) });
+    }
+    const res = await fetch('/api/photos', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ files: payload })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка ' + res.status);
+    $('#photos').value = '';
+    renderPhotos(data.photos || []);
+    msg('#photoMsg', 'Загружено: ' + (data.saved || []).length, true);
+  } catch (e) {
+    msg('#photoMsg', e.message || 'Ошибка', false);
+  } finally {
+    $('#photoBtn').disabled = false;
+  }
+});
+
+$('#photoRefresh').addEventListener('click', () => {
+  msg('#photoMsg', '', true);
+  loadPhotoList();
+});
+
+$('#pass').addEventListener('change', loadPhotoList);
+$('#pass').addEventListener('blur', () => { if (pass()) loadPhotoList(); });
+
+$('#photoList').addEventListener('click', async (e) => {
+  const copy = e.target.closest('[data-copy]');
+  if (copy) {
+    const text = copy.getAttribute('data-copy');
+    try {
+      await navigator.clipboard.writeText(text);
+      msg('#photoMsg', 'Скопировано: ' + text, true);
+    } catch {
+      msg('#photoMsg', 'Скопируйте вручную: ' + text, false);
+    }
+    return;
+  }
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (!pass()) return msg('#photoMsg', 'Введите пароль', false);
+    const name = decodeURIComponent(del.getAttribute('data-del'));
+    if (!confirm('Удалить ' + name + '?')) return;
+    try {
+      const res = await fetch('/api/photos/' + encodeURIComponent(name), {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      renderPhotos(data.photos || []);
+      msg('#photoMsg', 'Удалено: ' + name, true);
+    } catch (err) {
+      msg('#photoMsg', err.message || 'Ошибка', false);
+    }
+  }
+});
+</script>
+</body>
+</html>

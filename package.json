@@ -1,0 +1,13 @@
+{
+  "name": "1lvlshop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Демо-витрина кондитерской: каталог из Excel/CSV, корзина → WhatsApp",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
