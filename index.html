@@ -260,11 +260,19 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,252,250,.94);backdro
 .catalog-empty{grid-column:1/-1;text-align:center;padding:40px 16px;color:var(--muted);font-weight:550;background:rgba(255,255,255,.7);border:1px dashed var(--line);border-radius:var(--radius)}
 .more-wrap{margin:20px 0 36px;text-align:center;color:var(--muted);font-weight:500;font-size:.84rem}
 footer{border-top:1px solid var(--line);padding:24px 0 36px;background:linear-gradient(180deg,#f4ece8,#efe6e0);margin-top:12px}
-.foot-grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.foot-grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:start}
 .foot-col h4{font-size:.95rem;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
 .foot-col p{color:var(--muted);font-size:.9rem;margin-bottom:4px}
 .foot-col a{color:var(--accent-2);font-weight:650;text-decoration:none;border-bottom:1px solid transparent}
 .foot-col a:hover{border-bottom-color:rgba(163,72,86,.35)}
+.foot-map{min-width:0}
+.foot-map__frame{
+  position:relative;width:100%;aspect-ratio:16/11;min-height:160px;max-height:220px;
+  border-radius:14px;overflow:hidden;border:1px solid var(--line);
+  background:var(--bg-soft);box-shadow:var(--shadow-sm);
+}
+.foot-map__frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.foot-map__link{display:inline-block;margin-top:8px;font-size:.86rem}
 .overlay{position:fixed;inset:0;z-index:100;background:rgba(40,28,26,.46);backdrop-filter:blur(2px);display:grid;place-items:center;padding:16px;opacity:0;visibility:hidden;transition:.25s}
 .overlay.open{opacity:1;visibility:visible}
 .modal{width:min(480px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:#fff;border-radius:20px;padding:20px;transform:translateY(12px) scale(.98);transition:.25s;box-shadow:var(--shadow-lg)}
@@ -447,10 +455,18 @@ footer{border-top:1px solid var(--line);padding:24px 0 36px;background:linear-gr
       <p id="footDelivery"></p>
       <p class="foot-note" id="footPrepay"></p>
     </div>
-    <div class="foot-col">
-      <h4>Для владельца</h4>
-      <p><a href="/admin.html">Админка — загрузка Excel</a></p>
-      <p>Прайса нет? Скачайте <a href="/data/sample.csv">sample.csv</a></p>
+    <div class="foot-col foot-map">
+      <h4>Как добраться</h4>
+      <div class="foot-map__frame">
+        <iframe
+          id="mapFrame"
+          title="Карта — самовывоз"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <a class="foot-map__link" id="mapLink" href="#" target="_blank" rel="noopener">Открыть в Яндекс Картах</a>
     </div>
   </div>
 </footer>
@@ -488,6 +504,7 @@ const SHOP_NAME = "Сладкий уголок";
 const WHATSAPP_PHONE = "79000000000";
 const WA_GREETING = "Здравствуйте! Хочу уточнить по сладостям.";
 const SHOP_ADDRESS = "г. Казань, ул. Баумана, 12 (вход со двора)";
+const SHOP_MAP_QUERY = "Казань, улица Баумана, 12";
 const SHOP_HOURS = "Пн–Сб 10:00–20:00, Вс 11:00–18:00";
 const SHOP_DELIVERY = "Самовывоз из кондитерской. Доставка по городу — от 500 ₽, от 3000 ₽ бесплатно.";
 const SHOP_PREPAY = "Торты и крупные заказы — предоплата 50% по СБП после согласования в WhatsApp.";
@@ -777,6 +794,11 @@ function setupContacts() {
   $("#footHours").textContent = SHOP_HOURS;
   $("#footDelivery").textContent = SHOP_DELIVERY;
   $("#footPrepay").textContent = SHOP_PREPAY;
+  const mapQ = encodeURIComponent(SHOP_MAP_QUERY || SHOP_ADDRESS);
+  const mapFrame = $("#mapFrame");
+  const mapLink = $("#mapLink");
+  if (mapFrame) mapFrame.src = "https://yandex.ru/map-widget/v1/?text=" + mapQ + "&z=16";
+  if (mapLink) mapLink.href = "https://yandex.ru/maps/?text=" + mapQ;
   const dateEl = $("#orderDate");
   if (dateEl) {
     const t = new Date();
