@@ -54,19 +54,24 @@ header{position:sticky;top:0;z-index:50;background:rgba(255,252,250,.94);backdro
 .logo{display:inline-flex;align-items:center;justify-self:start;text-decoration:none;line-height:0;max-width:min(420px,58vw)}
 .logo img{display:block;height:96px;width:auto;max-width:100%;object-fit:contain;object-position:left center}
 .head-search{position:relative;width:100%;min-width:0}
-.head-search input{width:100%;height:42px;padding:0 40px 0 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.92);outline:0;font-weight:500;transition:border-color .15s,box-shadow .15s;line-height:normal}
+.head-search input{width:100%;height:42px;padding:0 42px 0 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.92);outline:0;font-weight:500;transition:border-color .15s,box-shadow .15s;line-height:normal}
 .head-search input::placeholder{color:#a89088;font-weight:500}
 .head-search input:focus{border-color:var(--accent-light);box-shadow:0 0 0 3px rgba(196,93,106,.14)}
 .head-search input[type="search"]::-webkit-search-decoration{-webkit-appearance:none;appearance:none}
-.head-search input[type="search"]::-webkit-search-cancel-button{
-  -webkit-appearance:none;appearance:none;
-  display:inline-block;width:18px;height:18px;margin:0 26px 0 0;padding:0;
-  vertical-align:middle;cursor:pointer;opacity:.55;
-  background:center / 14px 14px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f7870' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E");
+.head-search input[type="search"]::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.head-search svg.search-icon{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  width:17px;height:17px;color:var(--muted);pointer-events:none;opacity:.75;
 }
-.head-search input[type="search"]::-webkit-search-cancel-button:hover{opacity:.9}
-.head-search:has(input:not(:placeholder-shown)) > svg{opacity:0}
-.head-search svg{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--muted);pointer-events:none;opacity:.75;transition:opacity .15s}
+.head-search__clear{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:8px;display:none;place-items:center;
+  color:var(--muted);opacity:.75;touch-action:manipulation;
+}
+.head-search__clear svg{width:16px;height:16px;display:block}
+.head-search__clear:hover{opacity:1;background:rgba(58,42,40,.06)}
+.head-search.is-filled .search-icon{display:none}
+.head-search.is-filled .head-search__clear{display:grid}
 .search-suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:60;max-height:min(380px,60vh);overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:6px}
 .search-suggest[hidden]{display:none !important}
 .search-suggest__item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:8px;border-radius:10px;width:100%;text-align:left;transition:background .12s}
@@ -348,14 +353,10 @@ footer{border-top:1px solid var(--line);padding:24px 0 36px;background:linear-gr
     box-sizing:border-box;
   }
   .head-search input{
-    height:44px;padding:0 42px 0 14px;width:100%;box-sizing:border-box;
+    height:44px;padding:0 44px 0 14px;width:100%;box-sizing:border-box;
   }
-  .head-search input[type="search"]::-webkit-search-cancel-button{
-    width:18px;height:18px;margin:0 28px 0 0;
-    position:relative;top:0;
-    vertical-align:middle;
-  }
-  .head-search svg{right:14px;top:50%;transform:translateY(-50%)}
+  .head-search svg.search-icon{right:14px}
+  .head-search__clear{right:10px;width:30px;height:30px}
   .hero{
     padding:18px 14px 16px;margin-top:10px;margin-bottom:22px;
     min-height:280px;place-items:center;
@@ -396,9 +397,12 @@ footer{border-top:1px solid var(--line);padding:24px 0 36px;background:linear-gr
     <a class="logo" href="#top" id="shopLogoLink" aria-label="Сладкий уголок">
       <img id="shopLogo" src="/img/logo.png?v=4" alt="Сладкий уголок" width="420" height="96" decoding="async">
     </a>
-    <div class="head-search">
+    <div class="head-search" id="headSearch">
       <input type="search" id="catalogSearch" placeholder="Найти товар…" autocomplete="off" aria-label="Поиск">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <button type="button" class="head-search__clear" id="searchClear" aria-label="Очистить поиск">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
       <div class="search-suggest" id="searchSuggest" hidden></div>
     </div>
     <div class="head-right">
@@ -889,12 +893,29 @@ document.addEventListener("click", (e) => {
   if (t.dataset.sort) return setSort(t.dataset.sort);
   if (t.dataset.cat) {
     activeCat = t.dataset.cat; searchQuery = ""; $("#catalogSearch").value = "";
-    hideSuggest(); renderCatalog();
+    syncSearchClear(); hideSuggest(); renderCatalog();
   }
 });
 
-$("#catalogSearch").addEventListener("input", (e) => { searchQuery = e.target.value; renderCatalog(); renderSuggest(); });
+function syncSearchClear() {
+  $("#headSearch")?.classList.toggle("is-filled", !!$("#catalogSearch")?.value);
+}
+$("#catalogSearch").addEventListener("input", (e) => {
+  searchQuery = e.target.value;
+  syncSearchClear();
+  renderCatalog();
+  renderSuggest();
+});
 $("#catalogSearch").addEventListener("focus", () => { if (searchQuery.trim()) renderSuggest(); });
+$("#searchClear")?.addEventListener("click", () => {
+  const input = $("#catalogSearch");
+  input.value = "";
+  searchQuery = "";
+  syncSearchClear();
+  hideSuggest();
+  renderCatalog();
+  input.focus();
+});
 $("#searchSuggest").addEventListener("mousedown", (e) => e.preventDefault());
 $("#sortBtn").addEventListener("click", (e) => {
   e.stopPropagation();
